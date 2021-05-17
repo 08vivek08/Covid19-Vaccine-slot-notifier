@@ -1,0 +1,23 @@
+{
+  "name": "vaccine-slot-notifier",
+  "version": "1.0.0",
+  "description": "Get Notified On Email For Covid19 Vaccine's slots at your area",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "Covid19-Vaccine",
+    "Puppeteer",
+    "nodejs"
+  ],
+  "author": "08vivek08",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^9.0.2",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.1",
+    "puppeteer": "^9.1.1"
+  }
+}
