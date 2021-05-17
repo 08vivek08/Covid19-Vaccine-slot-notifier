@@ -50,7 +50,7 @@ const fetchurl = async () => {
         });
 }
 
-fetchurl();
+// fetchurl();
 
 app.get('/', async (req, res) => {
     fetchurl(url)
@@ -101,7 +101,7 @@ app.post('/admin', async (req, res) => {
 });
 
 const signer = async (password) => {
-    browser = await puppeteer.launch({ headless: true });
+    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
     page = await browser.newPage();
     await page.goto('https://login.yahoo.com/', { waitUntil: 'networkidle2' });
 
@@ -137,7 +137,7 @@ const mailer = async (data) => {
     //     // newPage.waitForNavigation({ waitUntil: 'networkidle2' }),
     //     newPage.click('a[aria-label="Compose"]')
     // ]);
-    // await newPage.waitForTimeout(3000);
+    await newPage.waitForTimeout(10000);
     console.log('@@@@@@@@@@@@@@@@@@@@@@searching bcc button');
     await newPage.waitForSelector('button[data-test-id="btn-cc"]', { visible: true });
     console.log('*****************found bcc');
