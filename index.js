@@ -71,7 +71,11 @@ app.post('/signin', async (req, res) => {
     };
     if (signed || req.headers.authorization.split(' ')[1] !== process.env.YAHOO_SECRET_KEY) { return res.status(400).json({ error: 'Admin already logged in' }); }
     let password = req.body.password;
+
+    await page.waitForSelector('#verification-code-field', { visible: true });
     await page.type('#verification-code-field', password, { waitUntil: 'networkidle2', delay: 100 });
+    
+    await page.waitForSelector('#verify-code-button', { visible: true });
     await Promise.all([
         // page.waitForNavigation({ waitUntil: 'networkidle2' }),
         page.click('#verify-code-button')
@@ -124,14 +128,19 @@ const signer = async (password) => {
             page.waitForNavigation({ waitUntil: 'networkidle2' }),
             page.click('#login-signin')
         ]);
+
         console.log("############################searching password");
+        await page.waitForSelector('input[name="password"]', { visible: true });
         await page.type('input[name="password"]', password, { waitUntil: 'networkidle2', delay: 100 });
+
+        await page.waitForSelector('#login-signin', { visible: true });
         await Promise.all([
             page.waitForNavigation({ waitUntil: 'networkidle2' }),
             page.click('#login-signin')
         ]);
 
         console.log("****************************sending otp");
+        await page.waitForSelector('button[value="100"]', { visible: true });
         await Promise.all([
             page.waitForNavigation({ waitUntil: 'networkidle2' }),
             page.click('button[value="100"]')
@@ -169,8 +178,8 @@ const mailer = async (data) => {
             newPage.click('button[data-test-id="btn-cc"]')
         ]);
         console.log('#################bcc clicked');
-        await newPage.waitForSelector('#message-bcc-field', { visible: true });
 
+        await newPage.waitForSelector('#message-bcc-field', { visible: true });
         console.log('**************************Email address');
         await newPage.type('#message-bcc-field', data.email, { waitUntil: 'networkidle2', delay: 100 });
 
