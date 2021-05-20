@@ -5,12 +5,14 @@ const fetch = require('node-fetch');
 const fs = require("fs");
 const api = require('./data.json');
 const env = require('dotenv');
+const path = require("path");
 
 // const noOfPost = process.argv[2];
 
 env.config();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use('/public', express.static(path.join(__dirname, 'screenshots')));
 
 const url = 'https://ron-swanson-quotes.herokuapp.com/v2/quotes';
 let quote = '', signed = false, page;
@@ -74,13 +76,13 @@ app.post('/signin', async (req, res) => {
 
     await page.waitForSelector('#verification-code-field', { visible: true });
     await page.type('#verification-code-field', password, { waitUntil: 'networkidle2', delay: 100 });
-    
+
     await page.waitForSelector('#verify-code-button', { visible: true });
     await Promise.all([
-        // page.waitForNavigation({ waitUntil: 'networkidle2' }),
+        page.waitForNavigation({ waitUntil: 'networkidle2' }),
         page.click('#verify-code-button')
     ])
-        // await page.screenshot({ path: 'login.png' })
+    await page.screenshot({ path: './screenshots/login.png' })
         .then(() => {
             password = '';
             res.status(200).json({
@@ -118,21 +120,41 @@ const signer = async (password) => {
         await page.setDefaultTimeout(0);
         await page.setUserAgent(userAgent);
 
+        ///////////////////////////////////////////////////////////////////////////
+        setTimeout(async () => {
+            await page.screenshot({ path: './screenshots/at_interval60.png' });
+        }, 60000);
+        setTimeout(async () => {
+            await page.screenshot({ path: './screenshots/at_interval_120.png' });
+        }, 120000);
+        //////////////////////////////////////////////////////////////////////////
+
         console.log("############################opening new page");
         await page.goto('https://login.yahoo.com/', { waitUntil: 'networkidle2' });
 
+        /////////////////////////////////////////////////////////////////////////
+        await page.screenshot({ path: './screenshots/yahoo_login.png' });
+        /////////////////////////////////////////////////////////////////////////
+
         console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%finding username");
         await page.waitForSelector('input[name="username"]', { visible: true });
+
+        console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@username button');
         await page.type('input[name="username"]', process.env.YAHOO_USER, { waitUntil: 'networkidle2', delay: 100 });
         await Promise.all([
             page.waitForNavigation({ waitUntil: 'networkidle2' }),
             page.click('#login-signin')
         ]);
 
+        /////////////////////////////////////////////////////////////////////////
+        await page.screenshot({ path: './screenshots/password.png' });
+        /////////////////////////////////////////////////////////////////////////
+
         console.log("############################searching password");
         await page.waitForSelector('input[name="password"]', { visible: true });
         await page.type('input[name="password"]', password, { waitUntil: 'networkidle2', delay: 100 });
 
+        console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@password button');
         await page.waitForSelector('#login-signin', { visible: true });
         await Promise.all([
             page.waitForNavigation({ waitUntil: 'networkidle2' }),
@@ -167,10 +189,14 @@ const mailer = async (data) => {
         //     // newPage.waitForNavigation({ waitUntil: 'networkidle2' }),
         //     newPage.click('a[aria-label="Compose"]')
         // ]);
-        // await newPage.screenshot({ path: 'mail.png' });
-        // setTimeout(async () => {
-        //     await newPage.screenshot({ path: 'bcc.png' });
-        // }, 60000);
+
+        /////////////////////////////////////////////////////////////////////////
+        await newPage.screenshot({ path: './screenshots/mail.png' });
+        setTimeout(async () => {
+            await newPage.screenshot({ path: './screenshots/bcc.png' });
+        }, 60000);
+        /////////////////////////////////////////////////////////////////////////
+
         console.log('@@@@@@@@@@@@@@@@@@@@@@searching bcc button');
         await newPage.waitForSelector('button[data-test-id="btn-cc"]');
         console.log('*****************found bcc');
