@@ -15,9 +15,12 @@
   "author": "08vivek08",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.21.1",
+    "chromedriver": "^90.0.1",
     "dotenv": "^9.0.2",
     "express": "^4.17.1",
     "got": "^11.8.2",
-    "puppeteer": "^9.1.1"
+    "puppeteer": "^9.1.1",
+    "selenium-webdriver": "*"
   }
 }

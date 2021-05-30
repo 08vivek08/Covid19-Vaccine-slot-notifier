@@ -6,7 +6,10 @@ const api = require('./data.json');
 const env = require('dotenv');
 const path = require("path");
 const got = require("got");
-const { isDate } = require('util');
+const wd = require("selenium-webdriver");
+let chrome = require('selenium-webdriver/chrome');
+const cd = require("chromedriver");
+const { default: axios } = require('axios');
 
 env.config();
 app.use(express.urlencoded({ extended: true }));
@@ -23,6 +26,15 @@ let browser;
     browser = await puppeteer.launch({ args: ['--no-sandbox'], headless: true });
     console.log('opened browser');
 })();
+axios.get('https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode=110033&date=30-05-2021', {
+    headers: {
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    }
+})
+    .then(res => {
+        console.log(res.data);
+    })
+    .catch(err => console.log(err));
 
 const fetchurl = (x) => {
     console.log('start', new Date(Date.now()));
@@ -162,6 +174,7 @@ const validatePin = (pin) => {
     }
     return true;
 }
+
 const validateEmail = (mail) => {
     var validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
     if (mail.match(validRegex)) {
@@ -173,6 +186,56 @@ const validateEmail = (mail) => {
 
 app.get('/', (req, res) => {
     res.sendFile("index.html");
+});
+
+app.post('/cowin', async (req, res) => {
+    let { pincode, age } = req.body;
+    if (!pincode || !age) return res.status(400).json({ error: 'Request error' });
+    let browser = await new wd.Builder().forBrowser('chrome').setChromeOptions(new chrome.Options().headless()).build();
+    let finalData = { "vaccine-availability": [] };
+
+    await browser.get("https://www.cowin.gov.in/home", {
+        headers: {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
+        }
+    });
+    let searchBypin = await browser.wait(wd.until.elementLocated(wd.By.css('#mat-tab-label-0-1')));
+    searchBypin.click();
+    await browser.wait(wd.until.elementLocated(wd.By.className('pin-search-btn')));
+    await browser.findElement(wd.By.id('mat-input-0')).sendKeys(pincode);
+    let enterPin = await browser.findElement(wd.By.className('pin-search-btn'));
+    enterPin.click();
+    await browser.wait(wd.until.elementLocated(wd.By.className('form-check-label')));
+    let ageLink = await browser.findElements(wd.By.className("form-check-label"));
+    if (parseInt(age) >= 18 && parseInt(age) <= 44) {
+        await ageLink[0].click();
+    }
+    else {
+        await ageLink[1].click();
+    }
+    browser.takeScreenshot().then(
+        function (image, err) {
+            //Screenshot will be saved under current directory with name myscreenshot.png
+            fs.writeFile('screenshots/cowin.png', image, 'base64', function (error) {
+                if (error != null)
+                    console.log("Error occured while saving screenshot" + error);
+            });
+        });
+
+    let rows = await browser.findElements(wd.By.css('.center-box .row'));
+    for (let i = 0; i < rows.length; i++) {
+        let obj = {};
+        obj["vaccine-center"] = await rows[i].findElement(wd.By.css(".center-box .row .center-name-title")).getText();
+        let name = await rows[i].findElements(wd.By.css(".center-box .row ul li h5"));
+        obj["vaccine-name"] = await name[1].getText();
+        let doses = await rows[i].findElements(wd.By.css(".center-box .row ul li a"));
+        obj["doses-available"] = await doses[1].getText();
+        finalData["vaccine-availability"].push(obj);
+    }
+
+    await browser.quit();
+
+    return res.status(200).json(finalData);
 });
 
 app.post('/subscribe', (req, res) => {
@@ -323,7 +386,7 @@ const signer = async (password) => {
 
 const mailer = async (data) => {
     try {
-        console.log('###########################data', data);
+        // console.log('###########################data', data);
         const newPage = await browser.newPage();
 
         console.log('&&&&&&&&&&&&&&&&&&&&&&&opened new page');
