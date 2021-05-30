@@ -6,10 +6,10 @@ const api = require('./data.json');
 const env = require('dotenv');
 const path = require("path");
 const got = require("got");
-const wd = require("selenium-webdriver");
-let chrome = require('selenium-webdriver/chrome');
-const cd = require("chromedriver");
-const { default: axios } = require('axios');
+// const wd = require("selenium-webdriver");
+// let chrome = require('selenium-webdriver/chrome');
+// const cd = require("chromedriver");
+// const { default: axios } = require('axios');
 
 env.config();
 app.use(express.urlencoded({ extended: true }));
@@ -17,7 +17,7 @@ app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'screenshots')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-let quote = '', signed = false, page;
+let signed = false, page;
 const userAgent = 'Mozilla/5.0 (X11; Linux x86_64)' +
     'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.39 Safari/537.36';
 
@@ -26,18 +26,19 @@ let browser;
     browser = await puppeteer.launch({ args: ['--no-sandbox'], headless: true });
     console.log('opened browser');
 })();
-axios.get('https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode=110033&date=30-05-2021', {
-    headers: {
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
-    }
-})
-    .then(res => {
-        console.log(res.data);
-    })
-    .catch(err => console.log(err));
+
+// axios.get('https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode=110033&date=30-05-2021', {
+//     headers: {
+//         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+//     }
+// })
+//     .then(res => {
+//         console.log(res.data);
+//     })
+//     .catch(err => console.log(err));
 
 const fetchurl = (x) => {
-    console.log('start', new Date(Date.now()));
+    console.log('start',(new Date(Date.now()).toLocaleString('en-In', { timeZone: 'Asia/Kolkata' })))
     let change = 0, i = 0;
     for (const pincode in api.locations) {
         const date = new Date(Date.now());
@@ -66,7 +67,7 @@ const fetchurl = (x) => {
                     if (data && data.centers && data.centers.length > 0) {
                         data.centers.forEach((center) => {
                             // console.log(new Date(Date.now()), center.center_id, "^^", api.locations[pincode].mp[center.center_id], "***date***", date - new Date(api.locations[pincode].mp[center.center_id]));
-                            if (!api.locations[pincode].mp[center.center_id] || (api.locations[pincode].mp[center.center_id] && date - new Date(api.locations[pincode].mp[center.center_id]) >= 1800000)) {
+                            if (!api.locations[pincode].mp[center.center_id] || (api.locations[pincode].mp[center.center_id] && date - new Date(api.locations[pincode].mp[center.center_id]) >= 21600000)) {
                                 let ctr = {}, ok = 0, slots = "";
                                 ctr.center_id = center.center_id;
                                 ctr.name = center.name;
@@ -186,56 +187,6 @@ const validateEmail = (mail) => {
 
 app.get('/', (req, res) => {
     res.sendFile("index.html");
-});
-
-app.post('/cowin', async (req, res) => {
-    let { pincode, age } = req.body;
-    if (!pincode || !age) return res.status(400).json({ error: 'Request error' });
-    let browser = await new wd.Builder().forBrowser('chrome').setChromeOptions(new chrome.Options().headless()).build();
-    let finalData = { "vaccine-availability": [] };
-
-    await browser.get("https://www.cowin.gov.in/home", {
-        headers: {
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
-        }
-    });
-    let searchBypin = await browser.wait(wd.until.elementLocated(wd.By.css('#mat-tab-label-0-1')));
-    searchBypin.click();
-    await browser.wait(wd.until.elementLocated(wd.By.className('pin-search-btn')));
-    await browser.findElement(wd.By.id('mat-input-0')).sendKeys(pincode);
-    let enterPin = await browser.findElement(wd.By.className('pin-search-btn'));
-    enterPin.click();
-    await browser.wait(wd.until.elementLocated(wd.By.className('form-check-label')));
-    let ageLink = await browser.findElements(wd.By.className("form-check-label"));
-    if (parseInt(age) >= 18 && parseInt(age) <= 44) {
-        await ageLink[0].click();
-    }
-    else {
-        await ageLink[1].click();
-    }
-    browser.takeScreenshot().then(
-        function (image, err) {
-            //Screenshot will be saved under current directory with name myscreenshot.png
-            fs.writeFile('screenshots/cowin.png', image, 'base64', function (error) {
-                if (error != null)
-                    console.log("Error occured while saving screenshot" + error);
-            });
-        });
-
-    let rows = await browser.findElements(wd.By.css('.center-box .row'));
-    for (let i = 0; i < rows.length; i++) {
-        let obj = {};
-        obj["vaccine-center"] = await rows[i].findElement(wd.By.css(".center-box .row .center-name-title")).getText();
-        let name = await rows[i].findElements(wd.By.css(".center-box .row ul li h5"));
-        obj["vaccine-name"] = await name[1].getText();
-        let doses = await rows[i].findElements(wd.By.css(".center-box .row ul li a"));
-        obj["doses-available"] = await doses[1].getText();
-        finalData["vaccine-availability"].push(obj);
-    }
-
-    await browser.quit();
-
-    return res.status(200).json(finalData);
 });
 
 app.post('/subscribe', (req, res) => {
@@ -393,7 +344,7 @@ const mailer = async (data) => {
         await newPage.setDefaultTimeout(0);
         await newPage.setUserAgent(userAgent);
 
-        await newPage.goto('https://in.mail.yahoo.com/d/compose/', { waitUntil: 'networkidle0' });
+        await newPage.goto('https://in.mail.yahoo.com/d/compose/', { waitUntil: 'networkidle2' });
         // console.log('Compose button')
         // await newPage.waitForSelector('a[aria-label="Compose"]', { visible: true });
         // await Promise.all([
@@ -423,15 +374,15 @@ const mailer = async (data) => {
 
         await newPage.waitForSelector('#message-bcc-field', { visible: true });
         console.log('**************************Email address');
-        await newPage.type('#message-bcc-field', data.email, { waitUntil: 'networkidle2', delay: 10 });
+        await newPage.type('#message-bcc-field', data.email, { waitUntil: 'networkidle2', delay: 5 });
 
         console.log('------------Subject');
         await newPage.waitForSelector('input[aria-label="Subject"]', { visible: true });
-        await newPage.type('input[aria-label="Subject"]', data.subject, { waitUntil: 'networkidle2', delay: 10 });
+        await newPage.type('input[aria-label="Subject"]', data.subject, { waitUntil: 'networkidle2', delay: 5 });
         console.log('------------Message');
 
         await newPage.waitForSelector('div[aria-label="Message body"]', { visible: true });
-        await newPage.type('div[aria-label="Message body"]', data.text, { waitUntil: 'networkidle2', delay: 10 });
+        await newPage.type('div[aria-label="Message body"]', data.text, { waitUntil: 'networkidle2', delay: 5 });
 
         await newPage.waitForSelector('button[title="Send this email"]', { visible: true });
         await Promise.all([
