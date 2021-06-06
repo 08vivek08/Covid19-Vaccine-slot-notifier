@@ -79,7 +79,7 @@ app.post('/subscribe', (req, res) => {
     }
     res.status(201).json('email added');
     let mailid = req.body.email + " \t ";
-    // return fetchurl(browser,1, req.body.pincode, mailid);
+    return fetchurl(browser,1, req.body.pincode, mailid);
 });
 
 app.post('/unsubscribe', (req, res) => {
@@ -92,7 +92,7 @@ app.post('/unsubscribe', (req, res) => {
         }
     }
     res.status(201).json('email removed');
-    // return fetchurl(browser,1);
+    return fetchurl(browser,1);
 });
 
 app.post('/signin', async (req, res) => {
