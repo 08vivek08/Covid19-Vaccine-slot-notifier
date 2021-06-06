@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const puppeteer = require('puppeteer');
+const got = require("got");
 const api = require('./data.json');
 const env = require('dotenv');
 const path = require("path");
@@ -21,6 +22,16 @@ let browser;
     browser = await puppeteer.launch({ args: ['--no-sandbox'], headless: true });
     console.log('opened browser');
 })();
+
+setInterval(() => {
+    got.get("https://covid-19-vaccine-slot-notifier.herokuapp.com/")
+        .then((res) => {
+            console.log("Generated the trafic to avoid idling");
+        })
+        .catch(err => {
+            console.log("Error in generating trafic: ", err);
+        });
+}, 20 * 60 * 1000);
 
 setInterval(() => {
     if (signed)
